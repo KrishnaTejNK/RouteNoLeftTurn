@@ -1,12 +1,21 @@
-public class MapPlanner {
+import java.util.*;
 
+public class MapPlanner {
     /**
      * Create the Map Planner object.  The degrees provided tell us how much deviation from straight-forward
      * is needed to identify an actual turn in a route rather than a straight-on driving.
      * @param degrees
      */
-    public MapPlanner( int degrees ) {}
+    private int degree;
+    private Location depot;
+    private Map<String, Street> streets;
+    private Map<Point, Intersection> intersections;
 
+    public MapPlanner(int degrees) {
+        this.streets = new HashMap<>();
+        this.intersections = new HashMap<>();
+        this.degree = degrees;
+    }
     /**
      * Identify the location of the depot.  That location is used as the starting point of any route request
      * to a destiation
@@ -14,6 +23,9 @@ public class MapPlanner {
      * @return -- true if the depot was set.  False if there was a problem in setting the depot location.
      */
     public Boolean depotLocation( Location depot ) {
+        if(depot == null || depot.getStreetId()==null || depot.getStreetSide() == null)return false;
+
+        this.depot = depot;
         return true;
     }
 
@@ -31,8 +43,31 @@ public class MapPlanner {
      * @param end -- coordinates of the ending entersection for the street
      * @return -- true if the street could be added.  False if the street isn't available in the map.
      */
-    public Boolean addStreet( String streetId, Point start, Point end ) {
+    public Boolean addStreet(String streetId, Point start, Point end) {
+        // Input validation
+        if (streetId == null || start == null || end == null || streetId.isEmpty()) {
+            return false;
+        }
+
+        // Check if the street already exists
+        if (streets.containsKey(streetId)) {
+            return false;
+        }
+
+        // Create and add the new street
+        Street newStreet = new Street( start, end);
+        streets.put(streetId, newStreet);
+
+        // Update intersections
+        updateIntersection(newStreet.getStart(), newStreet);
+        updateIntersection(newStreet.getEnd(), newStreet);
+
         return true;
+    }
+    private void updateIntersection(Point point, Street street) {
+        Intersection intersection = intersections.getOrDefault(point, new Intersection(point));
+        intersection.addStreet(street);
+        intersections.put(point, intersection);
     }
 
     /**
@@ -51,5 +86,9 @@ public class MapPlanner {
      */
     public Route routeNoLeftTurn( Location destination ) {
         return null;
+    }
+
+    Street getStreet(String streetId){
+        return streets.get(streetId);
     }
 }
