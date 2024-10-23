@@ -1,12 +1,16 @@
 public class Street {
-
+    private String id;
     private Point start;
     private Point end;
 
-    public Street( Point start, Point end) {
-
+    public Street(String id, Point start, Point end) {
+        this.id = id;
         this.start = start;
         this.end = end;
+    }
+
+    public String getId() {
+        return id;
     }
 
     public Point getStart() {
@@ -18,8 +22,6 @@ public class Street {
     }
 
     public double getLength() {
-        this.start.distanceTo(this.end);
         return start.distanceTo(end);
     }
-
 }

@@ -35,7 +35,7 @@ public class Point {
      * @param to -- the target destination point to which we want to know the distance
      * @return -- the distance
      */
-    private Double distanceTo( Point to ) {
+     Double distanceTo( Point to ) {
         Double distance = Math.sqrt( (to.x - this.x)*(to.x - this.x) + (to.y - this.y)*(to.y - this.y));
         return distance;
     }
@@ -73,8 +73,14 @@ public class Point {
             }
         } else if (turnSize > 0.0) {
             return TurnDirection.Left;
-        } else {
+        } else if (turnSize < 0.0) {
             return TurnDirection.Right;
         }
+        else {return null;}
+    }
+
+
+    public boolean equals(Point obj2) {
+        return (this.getX() == obj2.getX() && this.getY() == obj2.getY());
     }
 }

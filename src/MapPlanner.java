@@ -10,11 +10,14 @@ public class MapPlanner {
     private Location depot;
     private Map<String, Street> streets;
     private Map<Point, Intersection> intersections;
+    private Map<Point, Set<Street>> graph;
+
 
     public MapPlanner(int degrees) {
         this.streets = new HashMap<>();
         this.intersections = new HashMap<>();
         this.degree = degrees;
+        this.graph = new HashMap<>();
     }
     /**
      * Identify the location of the depot.  That location is used as the starting point of any route request
@@ -55,8 +58,12 @@ public class MapPlanner {
         }
 
         // Create and add the new street
-        Street newStreet = new Street( start, end);
+        Street newStreet = new Street( streetId,start, end);
         streets.put(streetId, newStreet);
+
+        // Update graph
+        addToGraph(start, newStreet);
+        addToGraph(end, newStreet);
 
         // Update intersections
         updateIntersection(newStreet.getStart(), newStreet);
@@ -64,10 +71,33 @@ public class MapPlanner {
 
         return true;
     }
+
+    private void addToGraph(Point point, Street street) {
+        graph.computeIfAbsent(point, k -> new HashSet<>()).add(street);
+    }
+
+    public void printGraph() {
+        System.out.println("Graph representation:");
+        for (Map.Entry<Point, Set<Street>> entry : graph.entrySet()) {
+            Point intersection = entry.getKey();
+            Set<Street> connectedStreets = entry.getValue();
+
+            System.out.print("Intersection " + intersection + " connects to: ");
+            for (Street street : connectedStreets) {
+                System.out.print( " Start  :  " + street.getStart() + " End  :  " + street.getEnd());
+            }
+            System.out.println();
+        }
+    }
+
     private void updateIntersection(Point point, Street street) {
         Intersection intersection = intersections.getOrDefault(point, new Intersection(point));
         intersection.addStreet(street);
         intersections.put(point, intersection);
+    }
+
+    public Set<Street> getAdjacentStreets(Point intersection) {
+        return graph.getOrDefault(intersection, new HashSet<>());
     }
 
     /**
@@ -75,7 +105,8 @@ public class MapPlanner {
      *  allowing for left turns to get to the street.
      */
     public String furthestStreet() {
-        return null;
+
+        return "";
     }
 
     /**
@@ -91,4 +122,6 @@ public class MapPlanner {
     Street getStreet(String streetId){
         return streets.get(streetId);
     }
+
+    int getDegree(){return degree;}
 }
