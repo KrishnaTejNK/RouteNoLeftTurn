@@ -3,6 +3,7 @@ public class SubRoute {
     Route walk;
     int startLeg;
     int endLeg;
+    MapPlanner mapPlanner;
 
     public Route getWalk() {
         return walk;
@@ -37,10 +38,11 @@ public class SubRoute {
      * @param startLeg -- the starting leg of the subroute
      * @param endLeg -- the ending leg of the subroute
      */
-    public SubRoute( Route walk, int startLeg, int endLeg ) {
+    public SubRoute( Route walk, int startLeg, int endLeg, MapPlanner mapPlanner ) {
         this.walk=walk;
         this.startLeg= startLeg;
         this.endLeg=endLeg;
+        this.mapPlanner = mapPlanner;
     }
 
     /**
@@ -64,10 +66,9 @@ public class SubRoute {
      * @return -- the Route that represents the subroute all on its own.
      */
     public Route extractRoute() {
-        Route newRoute = new Route();
-        for(int i = startLeg;i<endLeg;i++){
-
-            newRoute.appendTurn(this.walk.turnDirection(startLeg), walk.turnOnto(startLeg));
+        Route newRoute = new Route(mapPlanner);
+        for(int i = startLeg;i<=endLeg;i++){
+            newRoute.appendTurn(this.walk.turnDirection(i), walk.turnOnto(i));
         }
         return newRoute;
     }

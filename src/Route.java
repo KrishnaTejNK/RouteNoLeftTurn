@@ -149,7 +149,7 @@ public class Route {
                 if (currentPoint.equals(startPoint)) {
                     // We've found a loop
                     if (endLeg - startLeg >= 1) {  // Ensure the loop has at least 2 legs
-                        loopList.add(new SubRoute(this,startLeg, endLeg));
+                        loopList.add(new SubRoute(this,startLeg, endLeg,this.mapPlanner));
                     }
                     break;  // Stop looking for more loops starting from this leg
                 }

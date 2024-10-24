@@ -83,4 +83,9 @@ public class Point {
     public boolean equals(Point obj2) {
         return (this.getX() == obj2.getX() && this.getY() == obj2.getY());
     }
+
+    @Override
+    public String toString() {
+        return x +"," + y;
+    }
 }
