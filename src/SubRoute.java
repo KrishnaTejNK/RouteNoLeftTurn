@@ -1,33 +1,8 @@
 public class SubRoute {
-
     Route walk;
     int startLeg;
     int endLeg;
     MapPlanner mapPlanner;
-
-    public Route getWalk() {
-        return walk;
-    }
-
-    public void setWalk(Route walk) {
-        this.walk = walk;
-    }
-
-    public int getStartLeg() {
-        return startLeg;
-    }
-
-    public void setStartLeg(int startLeg) {
-        this.startLeg = startLeg;
-    }
-
-    public int getEndLeg() {
-        return endLeg;
-    }
-
-    public void setEndLeg(int endLeg) {
-        this.endLeg = endLeg;
-    }
 
     /**
      * Identify a sub-part of a route.  The sub-part of the route goes from the start of the startLeg
@@ -72,11 +47,36 @@ public class SubRoute {
     public Route extractRoute() {
         Route newRoute = new Route(mapPlanner);
         if(startLeg > endLeg) return  newRoute;
+        //this is done to add the first leg directly onto the newRoute
         newRoute.appendTurn(this.walk.turnDirection(startLeg), walk.turnOnto(startLeg));
-
+        // and then start iteratin to add the rest of them
         for(int i = startLeg + 1;i<=endLeg;i++){
             newRoute.appendTurn(this.walk.turnDirection(i), walk.turnOnto(i));
         }
         return newRoute;
+    }
+
+    public Route getWalk() {
+        return walk;
+    }
+
+    public void setWalk(Route walk) {
+        this.walk = walk;
+    }
+
+    public int getStartLeg() {
+        return startLeg;
+    }
+
+    public void setStartLeg(int startLeg) {
+        this.startLeg = startLeg;
+    }
+
+    public int getEndLeg() {
+        return endLeg;
+    }
+
+    public void setEndLeg(int endLeg) {
+        this.endLeg = endLeg;
     }
 }

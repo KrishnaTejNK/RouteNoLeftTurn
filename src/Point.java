@@ -36,6 +36,7 @@ public class Point {
      * @return -- the distance
      */
      Double distanceTo( Point to ) {
+         //changed the formula to use Math.hypot to calcualte for large number for double
          return Math.hypot(to.x - this.x, to.y - this.y);
     }
 
@@ -83,6 +84,7 @@ public class Point {
         return (this.getX() == obj2.getX() && this.getY() == obj2.getY());
     }
 
+    //added to String method to retive the coordinates for use in furthestStreet and routeNoLeftTurn
     @Override
     public String toString() {
         return x +"," + y;

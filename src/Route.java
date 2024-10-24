@@ -42,19 +42,16 @@ public class Route {
 
     }
 
-
     public TurnDirection turnDirection( int legNumber ) {
         if(legNumber == 0 || legs.isEmpty() || legs.get(legNumber)==null) return null;
         return legs.get(legNumber).getTurn();
     }
-
 
     public int legs() {
         
         return this.legs.size();
         
     }
-
 
     public Double length() {
         if (legs.isEmpty()) {
@@ -84,8 +81,6 @@ public class Route {
         return totalLength;
     }
 
-
-
     public List<SubRoute> loops() {
         List<SubRoute> loopList = new ArrayList<>();
         if (legs.size() < 2) {  // A loop needs at least 2 legs
@@ -114,7 +109,6 @@ public class Route {
         }
         return loopList;
     }
-
 
     public Route simplify() {
         Route simplifiedRoute = new Route(this.mapPlanner);

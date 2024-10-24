@@ -24,6 +24,7 @@ public class MapPlanner {
      * @return -- true if the depot was set.  False if there was a problem in setting the depot location.
      */
     public Boolean depotLocation( Location depot ) {
+        //added input validation checks
         if(depot == null || depot.getStreetId()==null || depot.getStreetSide() == null || streets.get(depot.getStreetId())== null )return false;
 
         this.depot = depot;
