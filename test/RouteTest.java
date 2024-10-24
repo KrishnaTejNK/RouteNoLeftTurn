@@ -114,14 +114,15 @@ public class RouteTest {
         route.appendTurn(TurnDirection.Left, "1st Ave");
         route.appendTurn(TurnDirection.Left, "2nd St");
         route.appendTurn(TurnDirection.Left, "Park Ave");
+        route.appendTurn(TurnDirection.Left, "Main St");
 
         List<SubRoute> loops = route.loops();
         System.out.println(route.legs());
         assertEquals(1, loops.size());
 
-        assertEquals(1, loops.get(0).getStartLeg());
+        assertEquals(2, loops.get(0).getStartLeg());
 
-        assertEquals(4, loops.get(0).getEndLeg());
+        assertEquals(5, loops.get(0).getEndLeg());
 
     }
 

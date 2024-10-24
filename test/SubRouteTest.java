@@ -22,6 +22,7 @@ public class SubRouteTest {
         mainRoute.appendTurn(TurnDirection.Left, "1st Ave");
         mainRoute.appendTurn(TurnDirection.Left, "2nd St");
         mainRoute.appendTurn(TurnDirection.Left, "Park Ave");
+        mainRoute.appendTurn(TurnDirection.Left, "Main St");
         subRoute = new SubRoute(mainRoute, 2, 3, mapPlanner);
     }
 
@@ -101,15 +102,18 @@ public class SubRouteTest {
     @Test
     public void testExtractRoutePreservesCorrectTurns() {
         Route extractedRoute = subRoute.extractRoute();
+        System.out.println(extractedRoute.turnDirection(1)+ extractedRoute.turnOnto(1));
+        System.out.println(extractedRoute.turnDirection(2)+ extractedRoute.turnOnto(2));
+
+        assertEquals(TurnDirection.Left, extractedRoute.turnDirection(1));
         assertEquals(TurnDirection.Left, extractedRoute.turnDirection(2));
-        assertEquals(TurnDirection.Left, extractedRoute.turnDirection(3));
     }
 
     @Test
     public void testExtractRouteWithLoop() {
-        SubRoute loopRoute = new SubRoute(mainRoute, 1, 4, mapPlanner);
+        SubRoute loopRoute = new SubRoute(mainRoute, 1, 5, mapPlanner);
         Route extractedRoute = loopRoute.extractRoute();
-        assertEquals(4, extractedRoute.legs());
+        assertEquals(5, extractedRoute.legs());
         assertFalse(extractedRoute.loops().isEmpty());
     }
 
