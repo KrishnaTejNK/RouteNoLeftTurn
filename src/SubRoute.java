@@ -39,6 +39,10 @@ public class SubRoute {
      * @param endLeg -- the ending leg of the subroute
      */
     public SubRoute( Route walk, int startLeg, int endLeg, MapPlanner mapPlanner ) {
+
+        if(walk == null ||  mapPlanner == null || startLeg <1 ) throw new IllegalArgumentException("Invalid Parameter Passed");
+
+
         this.walk=walk;
         this.startLeg= startLeg;
         this.endLeg=endLeg;
@@ -67,7 +71,10 @@ public class SubRoute {
      */
     public Route extractRoute() {
         Route newRoute = new Route(mapPlanner);
-        for(int i = startLeg;i<=endLeg;i++){
+        if(startLeg > endLeg) return  newRoute;
+        newRoute.appendTurn(this.walk.turnDirection(startLeg), walk.turnOnto(startLeg));
+
+        for(int i = startLeg + 1;i<=endLeg;i++){
             newRoute.appendTurn(this.walk.turnDirection(i), walk.turnOnto(i));
         }
         return newRoute;

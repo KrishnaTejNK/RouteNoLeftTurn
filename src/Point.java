@@ -36,8 +36,7 @@ public class Point {
      * @return -- the distance
      */
      Double distanceTo( Point to ) {
-        Double distance = Math.sqrt( (to.x - this.x)*(to.x - this.x) + (to.y - this.y)*(to.y - this.y));
-        return distance;
+         return Math.hypot(to.x - this.x, to.y - this.y);
     }
 
     /**
