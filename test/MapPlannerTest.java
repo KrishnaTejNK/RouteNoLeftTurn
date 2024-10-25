@@ -188,4 +188,20 @@ class MapPlannerTest {
 
         assertEquals(4, route.legs());
     }
+
+
+    @Test
+    public void testWithLoops(){
+        MapPlanner MP = new MapPlanner(30);
+        MP.addStreet("A St", new Point(0, 0), new Point(3, 4));
+        MP.addStreet("B St", new Point(3, 4), new Point(6, 0));
+
+
+
+        MP.depotLocation(new Location("2nd Ave", StreetSide.Right));
+
+        Location destination = new Location("B St", StreetSide.Right);
+        Route route = MP.routeNoLeftTurn(destination);
+        assertNull(route);
+    }
 }

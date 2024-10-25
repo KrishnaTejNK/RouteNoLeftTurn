@@ -392,9 +392,6 @@ public class MapPlanner {
         }
     }
 
-
-
-
     private void addToGraph(String point, Street street, StreetSide side) {
         graph.computeIfAbsent(point, k -> new HashSet<>());
         graph.get(point).add(new Location(street.getId(),side) );
