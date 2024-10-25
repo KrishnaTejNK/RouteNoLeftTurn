@@ -17,6 +17,19 @@ public class MapPlanner {
         this.degree = degrees;
         this.graph = new HashMap<>();
     }
+
+    private class IntersectionDetails {
+        String intersectionKey;
+        Point turningPoint;
+        Point destinationPoint;
+
+        IntersectionDetails(String intersectionKey, Point turningPoint, Point destinationPoint) {
+            this.intersectionKey = intersectionKey;
+            this.turningPoint = turningPoint;
+            this.destinationPoint = destinationPoint;
+        }
+    }
+
     /**
      * Identify the location of the depot.  That location is used as the starting point of any route request
      * to a destiation
@@ -74,281 +87,309 @@ public class MapPlanner {
      *  allowing for left turns to get to the street.
      */
     public String furthestStreet() {
-        if(this.depot == null){
+        // Return null if depot is not set
+        if (this.depot == null) {
             return null;
         }
 
-        String answer = null;
-        double max = -1.0;
+        String result = null;
+        double maxDistance = -1.0;
 
-        Route route = new Route(this);
-        route.appendTurn(TurnDirection.Straight, this.depot.getStreetId());
+        // Initialize route from depot
+        Route currentRoute = new Route(this);
+        currentRoute.appendTurn(TurnDirection.Straight, this.depot.getStreetId());
 
-        Map<String, Integer> visited = new HashMap<>();
-        Map<String, Double> shortestPath = new HashMap<>();
-        Map<String, Route> visitedRoute = new HashMap<>();
-        Stack<Location> stack = new Stack<>();
+        // Data structures for tracking visited streets and routes
+        Map<String, Integer> visitedStreets = new HashMap<>();
+        Stack<Location> locationStack = new Stack<>();
+        Map<String, Double> shortestDistances = new HashMap<>();
+        Map<String, Route> recordedRoutes = new HashMap<>();
 
-        Location currentLocation = this.depot;
-        visited.put(this.depot.getStreetId(), 0);
-        shortestPath.put(depot.getStreetId(),0.0);
-        visitedRoute.put(currentLocation.getStreetId(), route);
+        // Set up initial location and visited status
+        Location presentLocation = this.depot;
+        visitedStreets.put(this.depot.getStreetId(), 0);
+        shortestDistances.put(depot.getStreetId(), 0.0);
+        recordedRoutes.put(presentLocation.getStreetId(), currentRoute);
 
-        String key;
-        if(this.depot.getStreetSide() == StreetSide.Right){
-            key = streets.get(currentLocation.getStreetId()).endCords();
-        }else{
-            key = streets.get(currentLocation.getStreetId()).startCords();
+        // Determine starting intersection key
+        String intersectionKey;
+        if (this.depot.getStreetSide() == StreetSide.Right) {
+            intersectionKey = streets.get(presentLocation.getStreetId()).endCords();
+        }
+        else {
+            intersectionKey = streets.get(presentLocation.getStreetId()).startCords();
         }
 
-        Set<Location> neighbors = graph.get(key);
-
-        for(Location loc : neighbors){
-            if(loc.getStreetId().equals(this.depot.getStreetId())){
-                continue;
+        // Get adjacent locations and add to stack
+        Set<Location> adjacentLocations = graph.get(intersectionKey);
+        for (Location loc : adjacentLocations) {
+            if (!loc.getStreetId().equals(this.depot.getStreetId())) {
+                locationStack.push(loc);
             }
-            stack.push(loc);
         }
 
+        // Main loop for exploring routes
+        while (!locationStack.isEmpty()) {
+            Location nextLocation = locationStack.peek();
+            String upcomingStreetId = nextLocation.getStreetId();
 
-        while(!stack.isEmpty()){
-            Location currentStreet = stack.peek();
-            String nextStreetId = currentStreet.getStreetId();
-            Point turnFrom;
-            if(currentLocation.getStreetSide() == StreetSide.Right){
-                turnFrom = streets.get(currentLocation.getStreetId()).getStart();
-            }else{
-                turnFrom = streets.get(currentLocation.getStreetId()).getEnd();
+            // Determine departure point
+            Point departurePoint;
+            if (presentLocation.getStreetSide() == StreetSide.Right) {
+                departurePoint = streets.get(presentLocation.getStreetId()).getStart();
+            } else {
+                departurePoint = streets.get(presentLocation.getStreetId()).getEnd();
             }
 
+            IntersectionDetails details = getIntersectionDetails(nextLocation, upcomingStreetId);
+            String nextIntersectionKey = details.intersectionKey;
+            Point turningPoint = details.turningPoint;
+            Point destinationPoint = details.destinationPoint;
 
-            String nextKey;
-            Point turnAt;
-            Point turnTo;
+            Set<Location> nextAdjacentLocations = graph.get(nextIntersectionKey);
 
-            if(currentStreet.getStreetSide() == StreetSide.Right){
-                nextKey = streets.get(nextStreetId).endCords();
-                turnAt = streets.get(nextStreetId).getStart();
-                turnTo = streets.get(nextStreetId).getEnd();
-            }else{
-                nextKey = streets.get(nextStreetId).startCords();
-                turnAt = streets.get(nextStreetId).getEnd();
-                turnTo = streets.get(nextStreetId).getStart();
-            }
+            // Determine turn type and update current location
+            TurnDirection turnType = departurePoint.turnType(turningPoint, destinationPoint, this.degree);
+            presentLocation = nextLocation;
 
-            Set<Location> nextNeighbors = graph.get(nextKey);
+            // Check if turn is valid and can be appended
+            if (turnType != TurnDirection.UTurn && currentRoute.appendTurn(turnType, upcomingStreetId)) {
+                double routeLength = currentRoute.length();
 
-            TurnDirection turn = turnFrom.turnType(turnAt, turnTo, this.degree);
-            currentLocation = currentStreet;
-            if(turn != TurnDirection.UTurn && route.appendTurn(turn , nextStreetId)){
-                double currentLength = route.length();
-                if(visited.containsKey(nextStreetId)){
-                    SubRoute subRoute = new SubRoute(visitedRoute.get(nextStreetId), 1, visited.get(nextStreetId), this);
-                    Route newRoute = subRoute.extractRoute();
-                    double prevLength = newRoute.length();
+                // Check if street has been visited before
+                if (visitedStreets.containsKey(upcomingStreetId)) {
+                    SubRoute subRouteInstance = new SubRoute(recordedRoutes.get(upcomingStreetId), 1, visitedStreets.get(upcomingStreetId), this);
+                    Route alternateRoute = subRouteInstance.extractRoute();
+                    double previousLength = alternateRoute.length();
 
-                    if(prevLength <= currentLength){
-                        route = new SubRoute(route, 1, route.legs() - 1,this).extractRoute();
-                        if(streets.get(route.turnOnto(route.legs())).getStart().equals(route.legs.get(route.legs()).startPoint)){
-                            currentLocation = new Location(route.turnOnto(route.legs()), StreetSide.Right);
-                        }else{
-                            currentLocation = new Location(route.turnOnto(route.legs()), StreetSide.Left);
-                        }
-
-                        stack.pop();
-
+                    // Backtrack if new path is not shorter
+                    if (previousLength <= routeLength) {
+                        currentRoute = new SubRoute(currentRoute, 1, currentRoute.legs() - 1, this).extractRoute();
+                        presentLocation = updatePresentLocation(currentRoute);
+                        locationStack.pop();
                         continue;
                     }
                 }
-                visited.put(nextStreetId, route.legs());
-                shortestPath.put(nextStreetId, currentLength);
 
-                Route visitRoute;
-                try{
-                    SubRoute subRoute = new SubRoute(route, 1, route.legs(),this);
-                    visitRoute = subRoute.extractRoute();
-                }catch (Exception e){
+                // Update visited streets and distances
+                visitedStreets.put(upcomingStreetId, currentRoute.legs());
+                shortestDistances.put(upcomingStreetId, routeLength);
+
+                // Store current route
+                try {
+                    SubRoute subRouteInstance = new SubRoute(currentRoute, 1, currentRoute.legs(), this);
+                    Route routeSnapshot = subRouteInstance.extractRoute();
+                    recordedRoutes.put(upcomingStreetId, routeSnapshot);
+                } catch (Exception e) {
                     return null;
                 }
 
-                visitedRoute.put(nextStreetId, visitRoute);
-
-
-                if(nextNeighbors == null || nextNeighbors.isEmpty()){
-                    stack.pop();
+                // Handle dead-ends
+                if (nextAdjacentLocations == null || nextAdjacentLocations.isEmpty()) {
+                    locationStack.pop();
                 }
 
-                for(Location loc : nextNeighbors){
-                    if(loc.getStreetId().equals(nextStreetId)){
-                        continue;
+                // Add unexplored adjacent streets to stack
+                for (Location loc : nextAdjacentLocations) {
+                    if (!loc.getStreetId().equals(upcomingStreetId)) {
+                        locationStack.push(loc);
                     }
-                    stack.push(loc);
                 }
-            }else{
-
-                route = new SubRoute(route, 1, route.legs() - 1,this).extractRoute();
-
-                if(streets.get(route.turnOnto(route.legs())).getStart().equals(route.legs.get(route.legs()).startPoint)){
-                    currentLocation = new Location(route.turnOnto(route.legs()), StreetSide.Right);
-                }else{
-                    currentLocation = new Location(route.turnOnto(route.legs()), StreetSide.Left);
-                }
-                stack.pop();
+            } else {
+                // Backtrack if turn is invalid
+                currentRoute = new SubRoute(currentRoute, 1, currentRoute.legs() - 1, this).extractRoute();
+                presentLocation = updatePresentLocation(currentRoute);
+                locationStack.pop();
             }
         }
 
-        for(Map.Entry<String, Double> entry : shortestPath.entrySet()){
-            String streetId = entry.getKey();
-            Double distance = entry.getValue();
+        // Find the farthest street
+        for (Map.Entry<String, Double> entry : shortestDistances.entrySet()) {
+            String streetIdentifier = entry.getKey();
+            Double distanceValue = entry.getValue();
 
-            if(Double.compare(distance,max) > 0){
-                max = distance;
-                answer = streetId;
+            if (Double.compare(distanceValue, maxDistance) > 0) {
+                maxDistance = distanceValue;
+                result = streetIdentifier;
             }
         }
-        return answer;
+
+        return result;
+    }
+
+    //method to update present location
+    private Location updatePresentLocation(Route route) {
+        if (streets.get(route.turnOnto(route.legs())).getStart().equals(route.legs.get(route.legs()).startPoint)) {
+            return new Location(route.turnOnto(route.legs()), StreetSide.Right);
+        } else {
+            return new Location(route.turnOnto(route.legs()), StreetSide.Left);
+        }
+    }
+
+    //method to get the instersectins based on left or right side of the street
+    private IntersectionDetails getIntersectionDetails(Location location, String streetId) {
+        Street street = streets.get(streetId);
+        if (location.getStreetSide() == StreetSide.Right) {
+            return new IntersectionDetails(
+                    street.endCords(),
+                    street.getStart(),
+                    street.getEnd()
+            );
+        } else {
+            return new IntersectionDetails(
+                    street.startCords(),
+                    street.getEnd(),
+                    street.getStart()
+            );
+        }
     }
 
     /**
-     * Compute a route to the given destination from the depot, given the current map and not allowing
-     * the route to make any left turns at intersections.
-     * @param destination -- the destination for the route
-     * @return -- the route to the destination, or null if no route exists.
+     * Compute a route to the given destination from the depot without making any left turns.
+     * @param targetLocation The destination for the route
+     * @return The route to the destination, or null if no route exists
      */
-    public Route routeNoLeftTurn(Location destination) {
-        if(this.depot == null){
+    public Route routeNoLeftTurn(Location targetLocation) {
+        // Check if depot is set
+        if (this.depot == null) {
             return null;
         }
 
-        String answer = null;
-        double max = -1.0;
+        String farthestStreet = null;
+        double maxDistance = -1.0;
 
-        Route route = new Route(this);
-        route.appendTurn(TurnDirection.Straight, this.depot.getStreetId());
+        // Initialize the route from the depot
+        Route currentPath = new Route(this);
+        currentPath.appendTurn(TurnDirection.Straight, this.depot.getStreetId());
 
-        Map<String, Integer> visited = new HashMap<>();
-        Map<String, Double> shortestPath = new HashMap<>();
-        Map<String, Route> visitedRoute = new HashMap<>();
-        Stack<Location> stack = new Stack<>();
+        // Initialize data structures for tracking
+        Map<String, Integer> exploredStreets = new HashMap<>();
+        Map<String, Double> distanceToStreet = new HashMap<>();
+        Map<String, Route> pathToStreet = new HashMap<>();
+        Stack<Location> locationStack = new Stack<>();
 
-        Location currentLocation = this.depot;
-        visited.put(this.depot.getStreetId(), 0);
-        visitedRoute.put(currentLocation.getStreetId(), route);
+        Location currentSpot = this.depot;
+        exploredStreets.put(this.depot.getStreetId(), 0);
+        pathToStreet.put(currentSpot.getStreetId(), currentPath);
 
-        String key;
-        if(this.depot.getStreetSide() == StreetSide.Right){
-            key = streets.get(currentLocation.getStreetId()).endCords();
-        }else{
-            key = streets.get(currentLocation.getStreetId()).startCords();
+        // Determine the starting intersection key
+        String intersectionKey = (this.depot.getStreetSide() == StreetSide.Right)
+                ? streets.get(currentSpot.getStreetId()).endCords()
+                : streets.get(currentSpot.getStreetId()).startCords();
+
+        // Get adjacent locations and add them to the stack
+        Set<Location> adjacentLocations = graph.get(intersectionKey);
+        for (Location loc : adjacentLocations) {
+            if (!loc.getStreetId().equals(this.depot.getStreetId())) {
+                locationStack.push(loc);
+            }
         }
 
-        Set<Location> neighbors = graph.get(key);
+        // Main loop for path finding
+        while (!locationStack.isEmpty()) {
+            Location nextStreet = locationStack.peek();
+            String nextStreetId = nextStreet.getStreetId();
 
-        for(Location loc : neighbors){
-            if(loc.getStreetId().equals(this.depot.getStreetId())){
-                continue;
-            }
-            stack.push(loc);
-        }
+            // Determine turn points
+            Point turnOrigin = (currentSpot.getStreetSide() == StreetSide.Right)
+                    ? streets.get(currentSpot.getStreetId()).getStart()
+                    : streets.get(currentSpot.getStreetId()).getEnd();
 
+            String nextIntersectionKey;
+            Point turnMidpoint, turnDestination;
 
-        while(!stack.isEmpty()){
-            Location currentStreet = stack.peek();
-            String nextStreetId = currentStreet.getStreetId();
-            Point turnFrom;
-            if(currentLocation.getStreetSide() == StreetSide.Right){
-                turnFrom = streets.get(currentLocation.getStreetId()).getStart();
-            }else{
-                turnFrom = streets.get(currentLocation.getStreetId()).getEnd();
-            }
-
-
-            String nextKey;
-            Point turnAt;
-            Point turnTo;
-
-            if(currentStreet.getStreetSide() == StreetSide.Right){
-                nextKey = streets.get(nextStreetId).endCords();
-                turnAt = streets.get(nextStreetId).getStart();
-                turnTo = streets.get(nextStreetId).getEnd();
-            }else{
-                nextKey = streets.get(nextStreetId).startCords();
-                turnAt = streets.get(nextStreetId).getEnd();
-                turnTo = streets.get(nextStreetId).getStart();
+            if (nextStreet.getStreetSide() == StreetSide.Right) {
+                nextIntersectionKey = streets.get(nextStreetId).endCords();
+                turnMidpoint = streets.get(nextStreetId).getStart();
+                turnDestination = streets.get(nextStreetId).getEnd();
+            } else {
+                nextIntersectionKey = streets.get(nextStreetId).startCords();
+                turnMidpoint = streets.get(nextStreetId).getEnd();
+                turnDestination = streets.get(nextStreetId).getStart();
             }
 
-            Set<Location> nextNeighbors = graph.get(nextKey);
+            Set<Location> nextAdjacentLocations = graph.get(nextIntersectionKey);
 
-            TurnDirection turn = turnFrom.turnType(turnAt, turnTo, this.degree);
-            currentLocation = currentStreet;
-            if(turn != TurnDirection.UTurn && turn != TurnDirection.Left && route.appendTurn(turn , nextStreetId)){
-                double currentLength = route.length();
-                if(visited.containsKey(nextStreetId)){
-                    SubRoute subRoute = new SubRoute(visitedRoute.get(nextStreetId), 1, visited.get(nextStreetId), this);
-                    Route newRoute = subRoute.extractRoute();
-                    double prevLength = newRoute.length();
+            TurnDirection turnType = turnOrigin.turnType(turnMidpoint, turnDestination, this.degree);
+            currentSpot = nextStreet;
 
-                    if(prevLength <= currentLength){
-                        route = new SubRoute(route, 1, route.legs() - 1,this).extractRoute();
-                        if(streets.get(route.turnOnto(route.legs())).getStart().equals(route.legs.get(route.legs()).startPoint)){
-                            currentLocation = new Location(route.turnOnto(route.legs()), StreetSide.Right);
-                        }else{
-                            currentLocation = new Location(route.turnOnto(route.legs()), StreetSide.Left);
-                        }
+            // Check if the turn is valid (not U-turn or Left) and can be appended
+            if (turnType != TurnDirection.UTurn && turnType != TurnDirection.Left && currentPath.appendTurn(turnType, nextStreetId)) {
+                double pathLength = currentPath.length();
 
-                        stack.pop();
+                // Check if we've visited this street before
+                if (exploredStreets.containsKey(nextStreetId)) {
+                    SubRoute subPath = new SubRoute(pathToStreet.get(nextStreetId), 1, exploredStreets.get(nextStreetId), this);
+                    Route alternativePath = subPath.extractRoute();
+                    double previousLength = alternativePath.length();
 
+                    // If the new path is not shorter, backtrack
+                    if (previousLength <= pathLength) {
+                        currentPath = new SubRoute(currentPath, 1, currentPath.legs() - 1, this).extractRoute();
+                        currentSpot = determineNewLocation(currentPath);
+                        locationStack.pop();
                         continue;
                     }
                 }
-                visited.put(nextStreetId, route.legs());
-                shortestPath.put(nextStreetId, currentLength);
 
-                Route visitRoute;
-                try{
-                    SubRoute subRoute = new SubRoute(route, 1, route.legs(),this);
-                    visitRoute = subRoute.extractRoute();
-                }catch (Exception e){
+                // Update explored streets and distances
+                exploredStreets.put(nextStreetId, currentPath.legs());
+                distanceToStreet.put(nextStreetId, pathLength);
+
+                // Store the current path
+                try {
+                    SubRoute subPath = new SubRoute(currentPath, 1, currentPath.legs(), this);
+                    Route storedPath = subPath.extractRoute();
+                    pathToStreet.put(nextStreetId, storedPath);
+                } catch (Exception e) {
                     return null;
                 }
 
-                visitedRoute.put(nextStreetId, visitRoute);
-
-
-                if(nextNeighbors == null || nextNeighbors.isEmpty()){
-                    stack.pop();
+                // Handle dead-ends
+                if (nextAdjacentLocations == null || nextAdjacentLocations.isEmpty()) {
+                    locationStack.pop();
                 }
 
-                for(Location loc : nextNeighbors){
-                    if(loc.getStreetId().equals(nextStreetId)){
-                        continue;
-                    }
-                    stack.push(loc);
-                }
-            }else{
-                if(turn != TurnDirection.Left) {
-                    route = new SubRoute(route, 1, route.legs() - 1, this).extractRoute();
-
-                    if (streets.get(route.turnOnto(route.legs())).getStart().equals(route.legs.get(route.legs()).startPoint)) {
-                        currentLocation = new Location(route.turnOnto(route.legs()), StreetSide.Right);
-                    } else {
-                        currentLocation = new Location(route.turnOnto(route.legs()), StreetSide.Left);
+                // Add unexplored adjacent streets to the stack
+                for (Location loc : nextAdjacentLocations) {
+                    if (!loc.getStreetId().equals(nextStreetId)) {
+                        locationStack.push(loc);
                     }
                 }
-                stack.pop();
+            } else {
+                // Backtrack if the turn is invalid
+                if (turnType != TurnDirection.Left) {
+                    currentPath = new SubRoute(currentPath, 1, currentPath.legs() - 1, this).extractRoute();
+                    currentSpot = determineNewLocation(currentPath);
+                }
+                locationStack.pop();
             }
         }
 
-        for(Map.Entry<String, Double> entry : shortestPath.entrySet()){
+        // Find the farthest street (not used in this method, but kept for consistency)
+        for (Map.Entry<String, Double> entry : distanceToStreet.entrySet()) {
             String streetId = entry.getKey();
             Double distance = entry.getValue();
 
-            if(Double.compare(distance,max) > 0){
-                max = distance;
-                answer = streetId;
+            if (Double.compare(distance, maxDistance) > 0) {
+                maxDistance = distance;
+                farthestStreet = streetId;
             }
         }
-        return visitedRoute.get(destination.getStreetId());
+
+        // Return the path to the destination
+        return pathToStreet.get(targetLocation.getStreetId());
+    }
+
+    /**
+     * Helper method to determine the new location after backtracking
+     */
+    private Location determineNewLocation(Route route) {
+        if (streets.get(route.turnOnto(route.legs())).getStart().equals(route.legs.get(route.legs()).startPoint)) {
+            return new Location(route.turnOnto(route.legs()), StreetSide.Right);
+        } else {
+            return new Location(route.turnOnto(route.legs()), StreetSide.Left);
+        }
     }
 
 
