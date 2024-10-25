@@ -13,16 +13,16 @@ public class SubRouteTest {
         mainRoute = new Route(mapPlanner);
 
         // Set up a sample route
-        mapPlanner.addStreet("Main St", new Point(0, 0), new Point(100, 0));
+        mapPlanner.addStreet("A St", new Point(0, 0), new Point(100, 0));
         mapPlanner.addStreet("1st Ave", new Point(100, 0), new Point(100, 100));
         mapPlanner.addStreet("2nd St", new Point(100, 100), new Point(0, 100));
         mapPlanner.addStreet("Park Ave", new Point(0, 100), new Point(0, 0));
 
-        mainRoute.appendTurn(TurnDirection.Straight, "Main St");
+        mainRoute.appendTurn(TurnDirection.Straight, "A St");
         mainRoute.appendTurn(TurnDirection.Left, "1st Ave");
         mainRoute.appendTurn(TurnDirection.Left, "2nd St");
         mainRoute.appendTurn(TurnDirection.Left, "Park Ave");
-        mainRoute.appendTurn(TurnDirection.Left, "Main St");
+        mainRoute.appendTurn(TurnDirection.Left, "A St");
         subRoute = new SubRoute(mainRoute, 2, 3, mapPlanner);
     }
 
@@ -102,8 +102,6 @@ public class SubRouteTest {
     @Test
     public void testExtractRoutePreservesCorrectTurns() {
         Route extractedRoute = subRoute.extractRoute();
-        System.out.println(extractedRoute.turnDirection(1)+ extractedRoute.turnOnto(1));
-        System.out.println(extractedRoute.turnDirection(2)+ extractedRoute.turnOnto(2));
 
         assertEquals(TurnDirection.Left, extractedRoute.turnDirection(1));
         assertEquals(TurnDirection.Left, extractedRoute.turnDirection(2));

@@ -13,7 +13,7 @@ public class RouteTest {
         route = new Route(mapPlanner);
 
         // Add some streets to the mapPlanner for testing
-        mapPlanner.addStreet("Main St", new Point(0, 0), new Point(100, 0));
+        mapPlanner.addStreet("A St", new Point(0, 0), new Point(100, 0));
         mapPlanner.addStreet("1st Ave", new Point(100, 0), new Point(100, 100));
         mapPlanner.addStreet("2nd St", new Point(100, 100), new Point(0, 100));
         mapPlanner.addStreet("Park Ave", new Point(0, 100), new Point(0, 0));
@@ -22,20 +22,20 @@ public class RouteTest {
     // Append Turn Tests
     @Test
     public void testAppendTurnToEmptyRoute() {
-        assertTrue(route.appendTurn(TurnDirection.Straight, "Main St"));
+        assertTrue(route.appendTurn(TurnDirection.Straight, "A St"));
         assertEquals(1, route.legs());
     }
 
     @Test
     public void testAppendTurnToNonEmptyRoute() {
-        route.appendTurn(TurnDirection.Straight, "Main St");
+        route.appendTurn(TurnDirection.Straight, "A St");
         assertTrue(route.appendTurn(TurnDirection.Left, "1st Ave"));
         assertEquals(2, route.legs());
     }
 
     @Test
     public void testAppendInvalidTurn() {
-        route.appendTurn(TurnDirection.Straight, "Main St");
+        route.appendTurn(TurnDirection.Straight, "A St");
         assertFalse(route.appendTurn(TurnDirection.Right, "1st Ave"));
     }
 
@@ -48,8 +48,8 @@ public class RouteTest {
     // Turn Onto Tests
     @Test
     public void testTurnOntoValidLeg() {
-        route.appendTurn(TurnDirection.Straight, "Main St");
-        assertEquals("Main St", route.turnOnto(1));
+        route.appendTurn(TurnDirection.Straight, "A St");
+        assertEquals("A St", route.turnOnto(1));
     }
 
     @Test
@@ -61,7 +61,7 @@ public class RouteTest {
     // Turn Direction Tests
     @Test
     public void testTurnDirectionValidLeg() {
-        route.appendTurn(TurnDirection.Straight, "Main St");
+        route.appendTurn(TurnDirection.Straight, "A St");
         assertEquals(TurnDirection.Straight, route.turnDirection(1));
     }
 
@@ -75,7 +75,7 @@ public class RouteTest {
     @Test
     public void testLegsCount() {
         assertEquals(0, route.legs());
-        route.appendTurn(TurnDirection.Straight, "Main St");
+        route.appendTurn(TurnDirection.Straight, "A St");
         route.appendTurn(TurnDirection.Left, "1st Ave");
         assertEquals(2, route.legs());
     }
@@ -88,13 +88,13 @@ public class RouteTest {
 
     @Test
     public void testLengthSingleLegRoute() {
-        route.appendTurn(TurnDirection.Straight, "Main St");
-        assertEquals(50.0, route.length(), 0.001); // Half of Main St length
+        route.appendTurn(TurnDirection.Straight, "A St");
+        assertEquals(50.0, route.length(), 0.001); // Half of A St length
     }
 
     @Test
     public void testLengthMultipleLegRoute() {
-        route.appendTurn(TurnDirection.Straight, "Main St");
+        route.appendTurn(TurnDirection.Straight, "A St");
         route.appendTurn(TurnDirection.Left, "1st Ave");
         route.appendTurn(TurnDirection.Left, "2nd St");
         assertEquals(200.0, route.length(), 0.001); // 50 + 100 + 100
@@ -103,21 +103,20 @@ public class RouteTest {
     // Loops Tests
     @Test
     public void testLoopsNoLoop() {
-        route.appendTurn(TurnDirection.Straight, "Main St");
+        route.appendTurn(TurnDirection.Straight, "A St");
         route.appendTurn(TurnDirection.Right, "1st Ave");
         assertTrue(route.loops().isEmpty());
     }
 
     @Test
     public void testLoopsSimpleLoop() {
-        route.appendTurn(TurnDirection.Straight, "Main St");
+        route.appendTurn(TurnDirection.Straight, "A St");
         route.appendTurn(TurnDirection.Left, "1st Ave");
         route.appendTurn(TurnDirection.Left, "2nd St");
         route.appendTurn(TurnDirection.Left, "Park Ave");
-        route.appendTurn(TurnDirection.Left, "Main St");
+        route.appendTurn(TurnDirection.Left, "A St");
 
         List<SubRoute> loops = route.loops();
-        System.out.println(route.legs());
         assertEquals(1, loops.size());
 
         assertEquals(2, loops.get(0).getStartLeg());
@@ -132,7 +131,7 @@ public class RouteTest {
 
     public void testSimplifyNoStraightSegments() {
 
-        route.appendTurn(TurnDirection.Straight, "Main St");
+        route.appendTurn(TurnDirection.Straight, "A St");
         route.appendTurn(TurnDirection.Left, "1st Ave");
         route.appendTurn(TurnDirection.Left, "2nd St");
 
@@ -146,8 +145,8 @@ public class RouteTest {
 
     public void testSimplifyStraightSegments() {
 
-        route.appendTurn(TurnDirection.Straight,"Main St");
-        route.appendTurn(TurnDirection.UTurn,"Main St");
+        route.appendTurn(TurnDirection.Straight,"A St");
+        route.appendTurn(TurnDirection.UTurn,"A St");
         route.appendTurn(TurnDirection.Left,"1st Ave");
         route.appendTurn(TurnDirection.Straight,"1st Ave");
 

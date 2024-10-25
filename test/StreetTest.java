@@ -11,20 +11,20 @@ public class StreetTest {
     public void setUp() {
         start = new Point(0, 0);
         end = new Point(3, 4);
-        street = new Street("Main St", start, end);
+        street = new Street("A St", start, end);
     }
 
     @Test
     public void testConstructor() {
         assertNotNull(street);
-        assertEquals("Main St", street.getId());
+        assertEquals("A St", street.getId());
         assertEquals(start, street.getStart());
         assertEquals(end, street.getEnd());
     }
 
     @Test
     public void testGetId() {
-        assertEquals("Main St", street.getId());
+        assertEquals("A St", street.getId());
     }
 
     @Test

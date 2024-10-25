@@ -6,9 +6,9 @@ public class LocationTest {
     // Input Validation Tests
     @Test
     public void testConstructorWithValidInputs() {
-        Location location = new Location("Main St", StreetSide.Left);
+        Location location = new Location("A St", StreetSide.Left);
         assertNotNull(location);
-        assertEquals("Main St", location.getStreetId());
+        assertEquals("A St", location.getStreetId());
         assertEquals(StreetSide.Left, location.getStreetSide());
     }
 
@@ -44,8 +44,8 @@ public class LocationTest {
     // Control Flow Tests
     @Test
     public void testGetStreetId() {
-        Location location = new Location("Elm St", StreetSide.Left);
-        assertEquals("Elm St", location.getStreetId());
+        Location location = new Location("B St", StreetSide.Left);
+        assertEquals("B St", location.getStreetId());
     }
 
     @Test
